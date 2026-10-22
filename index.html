@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PixelPulse | Image Search</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <p class="eyebrow">DISCOVER THE WORLD IN IMAGES</p>
+      <h1>Pixel<span>Pulse</span></h1>
+      <p class="intro">Search for a topic and explore images from Wikimedia Commons.</p>
+    </header>
+
+    <form id="search-form" class="search-form">
+      <label class="sr-only" for="search-input">Search images</label>
+      <input id="search-input" type="search" placeholder="Try cats, ocean, new york..." autocomplete="off">
+      <button type="submit">Search</button>
+    </form>
+
+    <p id="result-count" class="result-count" aria-live="polite"></p>
+    <section id="results" class="results" aria-label="Image search results"></section>
+
+    <footer>Images provided by Wikimedia Commons. Image titles are shown as returned by the API.</footer>
+  </main>
+</body>
+</html>
