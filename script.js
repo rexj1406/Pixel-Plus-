@@ -1,90 +1,138 @@
-const form = document.getElementById("search-form");
-const input = document.getElementById("search-input");
-const results = document.getElementById("results");
-const resultCount = document.getElementById("result-count");
+const form = document.querySelector("#search-form");
+const input = document.querySelector("#search-input");
+const button = document.querySelector("#search-button");
+const statusBox = document.querySelector("#status");
+const resultsGrid = document.querySelector("#results");
+const resultsTitle = document.querySelector("#results-title");
+const resultsCount = document.querySelector("#results-count");
+const resultsSection = document.querySelector(".results-section");
 
-function showMessage(message) {
-  results.innerHTML = "";
-  const paragraph = document.createElement("p");
-  paragraph.className = "message";
-  paragraph.textContent = message;
-  results.appendChild(paragraph);
+const API = "https://commons.wikimedia.org/w/api.php";
+
+function showStatus(type, message) {
+  statusBox.className = `status ${type}`;
+  const symbol = type === "loading"
+    ? '<div class="spinner" aria-hidden="true"></div>'
+    : `<div class="status-symbol" aria-hidden="true">${type === "error" ? "!" : type === "empty" ? "⌕" : "✦"}</div>`;
+  statusBox.innerHTML = `${symbol}<p>${message}</p>`;
+  statusBox.hidden = false;
 }
 
-function render(items, query) {
-  results.innerHTML = "";
+function setLoading(isLoading) {
+  button.disabled = isLoading;
+  button.innerHTML = isLoading ? "Searching…" : 'Search <span aria-hidden="true">↗</span>';
+  resultsSection.setAttribute("aria-busy", String(isLoading));
+}
 
-  resultCount.textContent = `Showing ${items.length} results for "${query}"`;
+function clearResults() {
+  resultsGrid.innerHTML = "";
+}
 
-  if (items.length === 0) {
-    showMessage(`No images found for "${query}". Try another search.`);
-    return;
-  }
+function renderResults(items) {
+  clearResults();
+  statusBox.hidden = true;
 
-  items.forEach((item) => {
-    const thumbnail = item.imageinfo?.[0]?.thumburl;
-
-    // Skip any API result that doesn't have a usable thumbnail URL.
-    if (!thumbnail) return;
+  items.forEach((item, index) => {
+    const title = item.title || "Untitled image";
+    const imageUrl = item.imageinfo?.[0]?.thumburl || item.imageinfo?.[0]?.url;
+    if (!imageUrl) return;
 
     const card = document.createElement("article");
-    card.className = "card";
+    card.className = "image-card";
+    card.style.animationDelay = `${Math.min(index * 55, 400)}ms`;
 
-    const img = document.createElement("img");
-    img.src = thumbnail;
-    img.alt = item.title || "Wikimedia Commons image";
-    img.loading = "lazy";
+    const image = document.createElement("img");
+    image.src = imageUrl;
+    image.alt = title.replace(/^File:/, "").replace(/\.[^/.]+$/, "");
+    image.loading = "lazy";
 
-    const caption = document.createElement("p");
-    caption.textContent = item.title || "Untitled image";
+    const info = document.createElement("div");
+    info.className = "card-info";
 
-    card.appendChild(img);
-    card.appendChild(caption);
-    results.appendChild(card);
+    const heading = document.createElement("h3");
+    heading.textContent = title.replace(/^File:/, "");
+
+    const link = document.createElement("a");
+    link.href = item.imageinfo?.[0]?.descriptionurl || imageUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "View source ↗";
+
+    info.append(heading, link);
+    card.append(image, info);
+    resultsGrid.append(card);
   });
 
-  if (!results.children.length) {
-    showMessage("No displayable images were returned. Try another search.");
+  const shown = resultsGrid.children.length;
+  if (shown === 0) {
+    showStatus("empty", "No usable images found. Try another search.");
+    resultsCount.textContent = "Try a different topic.";
+  } else {
+    statusBox.hidden = true;
+    resultsCount.textContent = `Showing ${shown} result${shown === 1 ? "" : "s"} for “${input.value.trim()}”.`;
   }
 }
 
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
+async function searchImages(query) {
+  const cleanedQuery = query.trim();
+  if (!cleanedQuery) return;
 
-  const query = input.value.trim();
+  clearResults();
+  resultsTitle.textContent = "Searching the world…";
+  resultsCount.textContent = "Please wait while we find images.";
+  showStatus("loading", "Searching…");
+  setLoading(true);
 
-  // Ignore empty searches.
-  if (!query) return;
-
-  const url =
-    "https://commons.wikimedia.org/w/api.php?action=query" +
-    "&generator=search" +
-    "&gsrsearch=" + encodeURIComponent(query) +
-    "&gsrnamespace=6" +
-    "&gsrlimit=12" +
-    "&prop=imageinfo" +
-    "&iiprop=url" +
-    "&iiurlwidth=300" +
-    "&format=json" +
-    "&origin=*";
-
-  resultCount.textContent = "";
-  showMessage("Searching for images...");
+  const params = new URLSearchParams({
+    action: "query",
+    format: "json",
+    origin: "*",
+    generator: "search",
+    gsrsearch: cleanedQuery,
+    gsrnamespace: "6",
+    gsrlimit: "18",
+    prop: "imageinfo",
+    iiprop: "url",
+    iiurlwidth: "640"
+  });
 
   try {
-    const response = await fetch(url);
-
+    const response = await fetch(`${API}?${params.toString()}`);
     if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status}`);
+      throw new Error(`Request failed with status ${response.status}`);
     }
 
     const data = await response.json();
-    const items = Object.values(data.query?.pages || {});
+    const pages = data.query?.pages || {};
+    const items = Object.values(pages);
 
-    render(items, query);
+    resultsTitle.textContent = `Explore “${cleanedQuery}”`;
+    if (items.length === 0) {
+      showStatus("empty", `No results for “${cleanedQuery}”. Try another search.`);
+      resultsCount.textContent = "No images found.";
+      return;
+    }
+
+    renderResults(items);
   } catch (error) {
     console.error("Image search failed:", error);
-    resultCount.textContent = "";
-    showMessage("Unable to load images. Check your internet connection and try again.");
+    clearResults();
+    resultsTitle.textContent = "Search interrupted";
+    resultsCount.textContent = "We couldn't load images this time.";
+    showStatus("error", "Something went wrong. Please check your connection and try again.");
+  } finally {
+    setLoading(false);
   }
+}
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  searchImages(input.value);
+});
+
+document.querySelectorAll("[data-query]").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    input.value = chip.dataset.query;
+    searchImages(chip.dataset.query);
+  });
 });
