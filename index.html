@@ -1,30 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PixelPulse | Image Search</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Discover images from Wikimedia Commons." />
+  <title>PixelPulse — Image Explorer</title>
+  <link rel="stylesheet" href="style.css" />
   <script src="script.js" defer></script>
 </head>
 <body>
-  <main class="app">
-    <header class="hero">
-      <p class="eyebrow">DISCOVER THE WORLD IN IMAGES</p>
-      <h1>Pixel<span>Pulse</span></h1>
-      <p class="intro">Search for a topic and explore images from Wikimedia Commons.</p>
-    </header>
+  <header class="site-header">
+    <a class="brand" href="#" aria-label="PixelPulse home">
+      <span class="brand-mark">✦</span><span>Pixel<span class="accent">Pulse</span></span>
+    </a>
+    <span class="header-note">A little inspiration, one search away</span>
+  </header>
 
-    <form id="search-form" class="search-form">
-      <label class="sr-only" for="search-input">Search images</label>
-      <input id="search-input" type="search" placeholder="Try cats, ocean, new york..." autocomplete="off">
-      <button type="submit">Search</button>
-    </form>
+  <main class="container">
+    <section class="hero">
+      <p class="eyebrow">YOUR VISUAL DISCOVERY SPACE</p>
+      <h1>Find something <span class="gradient-text">wonderful.</span></h1>
+      <p class="intro">Explore photographs and illustrations from around the world.</p>
 
-    <p id="result-count" class="result-count" aria-live="polite"></p>
-    <section id="results" class="results" aria-label="Image search results"></section>
+      <form id="search-form" class="search-form">
+        <label class="sr-only" for="search-input">Search for images</label>
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="search-input" type="search" placeholder="Try “mountains”, “cats”, or “space”…" autocomplete="off" required />
+        <button id="search-button" type="submit">Search <span aria-hidden="true">↗</span></button>
+      </form>
+      <div class="quick-searches" aria-label="Suggested searches">
+        <span>Try:</span>
+        <button type="button" class="chip" data-query="nature">Nature</button>
+        <button type="button" class="chip" data-query="architecture">Architecture</button>
+        <button type="button" class="chip" data-query="cats">Cats</button>
+        <button type="button" class="chip" data-query="ocean">Ocean</button>
+      </div>
+    </section>
 
-    <footer>Images provided by Wikimedia Commons. Image titles are shown as returned by the API.</footer>
+    <section class="results-section" aria-live="polite" aria-busy="false">
+      <div class="results-heading">
+        <div>
+          <h2 id="results-title">A world of images awaits</h2>
+          <p id="results-count">Search for a topic to get started.</p>
+        </div>
+      </div>
+      <div id="status" class="status idle">
+        <div class="status-symbol">✦</div>
+        <p>Type a word above and start exploring.</p>
+      </div>
+      <div id="results" class="results-grid"></div>
+    </section>
   </main>
+
+  <footer class="site-footer">
+    <span>Made with curiosity ✦</span>
+    <span>Images provided by Wikimedia Commons</span>
+  </footer>
 </body>
 </html>
